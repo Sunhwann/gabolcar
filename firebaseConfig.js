@@ -11,6 +11,7 @@ const firebaseConfig = {
     appId: "1:1004757584178:web:18acde73f34684a883ef2b",
     measurementId: "G-0M9MJJ18BQ"
   };
+
   // Firebase 앱 초기화
 const app = initializeApp(firebaseConfig);
 
@@ -42,3 +43,6 @@ const logout = async () => {
 
 
 export { auth, provider, db, signInWithPopup, signOut };
+
+// Firestore 및 Auth 내보내기
+export const firestore = getFirestore(app);
