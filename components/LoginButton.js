@@ -1,31 +1,51 @@
-"use client";
+import { useEffect, useState } from "react";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
+import { app } from "../firebaseConfig";
 
-import { auth, provider, db } from "../firebaseConfig";
-import { signInWithPopup } from "firebase/auth";  // ✅ `firebase/auth`에서 가져오기
-import { doc, setDoc } from "firebase/firestore";  
-import { useState } from "react";  
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
 export default function LoginButton() {
   const [user, setUser] = useState(null);
 
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, provider);  // ✅ 오류 해결
-      const user = result.user;
-      setUser(user);
-
-      // Firestore에 사용자 정보 저장
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-      });
-
-      console.log("로그인 성공:", user);
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      console.log("User signed in:", result.user);
     } catch (error) {
-      console.error("로그인 오류:", error);
+      console.error("Login failed:", error);
     }
   };
 
-  return <button onClick={handleLogin}>로그인</button>;
-}
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  return (
+    <div>
+      {auth.currentUser ? (
+        <button onClick={handleLogin} className="bg-blue-600 text-white px-4 py-2 rounded">
+          {auth.currentUser?.displayName} | 로그아웃
+        </button>
+      ) : (
+        <button onClick={handleLogin} className="bg-blue-500 text-white px-4 py-2 rounded">
+          Google 로그인
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default LoginButton;

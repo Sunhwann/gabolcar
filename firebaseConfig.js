@@ -11,11 +11,32 @@ const firebaseConfig = {
     appId: "1:1004757584178:web:18acde73f34684a883ef2b",
     measurementId: "G-0M9MJJ18BQ"
   };
-  
-// 🔥 Firebase 초기화
+  // Firebase 앱 초기화
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-const db = getFirestore(app);
 
-export { auth, provider, signInWithPopup, db };  // ✅ `doc` 제거
+// Firebase Authentication & Firestore 초기화
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+// 로그인 함수
+const signInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
+  } catch (error) {
+    console.error("Google 로그인 실패:", error);
+    return null;
+  }
+};
+
+// 로그아웃 함수
+const logout = async () => {
+  try {
+    await signOut(auth);
+  } catch (error) {
+    console.error("로그아웃 실패:", error);
+  }
+};
+
+export { auth, provider, db, signInWithPopup, signOut };
