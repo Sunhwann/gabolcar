@@ -39,4 +39,6 @@ const logout = async () => {
   }
 };
 
+
+
 export { auth, provider, db, signInWithPopup, signOut };

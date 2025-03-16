@@ -6,6 +6,8 @@ import { auth } from "../firebaseConfig";
 import TravelTypeSelection from "../components/TravelTypeSelection";
 import { signInWithPopup, signOut, GoogleAuthProvider } from "firebase/auth";
 
+
+
 const provider = new GoogleAuthProvider();
 let isLoggingIn = false; // 중복 로그인 방지 변수
 
