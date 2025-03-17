@@ -1,15 +1,47 @@
 "use client";
 
-import { useState } from "react";
-import { addBusinessTrip } from "../firebaseFunctions";
+import { useState, useEffect } from "react";
+import { auth } from "../firebaseConfig";
+import { addBusinessTrip, saveTempBusinessTrip, loadTempBusinessTrip } from "../firebaseFunctions";
 
-export default function BusinessTripForm({ userId }) {
+export default function BusinessTripForm() {
+  const [userId, setUserId] = useState(null);
   const [tripDetails, setTripDetails] = useState({
     title: "",
     schedules: [{ departure: "", destinations: [""], meetingTime: "", duration: "" }]
   });
 
-  // 입력 변경 핸들러 (수정됨)
+  /** ✅ 1. 로그인한 사용자 가져오기 */
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUserId(user.uid);
+        console.log("✅ 로그인된 userId:", user.uid);
+      } else {
+        setUserId(null);
+        console.log("❌ 로그인 안 됨");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  /** ✅ 2. 최근 데이터 불러오기 */
+  useEffect(() => {
+    const fetchTempData = async () => {
+      if (!userId) return;
+      console.log("🔄 최근 임시 저장 데이터 불러오는 중...");
+      const savedData = await loadTempBusinessTrip(userId);
+      if (savedData) {
+        console.log("📌 불러온 데이터:", savedData);
+        setTripDetails(savedData);
+      }
+    };
+
+    fetchTempData();
+  }, [userId]);
+
+  /** 입력 변경 핸들러 */
   const handleChange = (index, key, value) => {
     setTripDetails((prevTripDetails) => {
       const updatedSchedules = [...prevTripDetails.schedules];
@@ -18,7 +50,7 @@ export default function BusinessTripForm({ userId }) {
     });
   };
 
-  // 목적지 추가
+  /** ✅ 3. 목적지 추가 */
   const addDestination = (index) => {
     setTripDetails((prevTripDetails) => {
       const updatedSchedules = [...prevTripDetails.schedules];
@@ -27,7 +59,7 @@ export default function BusinessTripForm({ userId }) {
     });
   };
 
-  // 목적지 삭제
+  /** ✅ 4. 목적지 삭제 */
   const removeDestination = (index, destIndex) => {
     setTripDetails((prevTripDetails) => {
       const updatedSchedules = [...prevTripDetails.schedules];
@@ -36,27 +68,42 @@ export default function BusinessTripForm({ userId }) {
     });
   };
 
-  // Firestore에 저장
-  const handleSave = async () => {
+  /** ✅ 5. 임시 저장 */
+  const handleSaveTemp = async () => {
     if (!userId) {
-      console.error("Error: User ID is missing.");
+      console.error("❌ User ID가 없음.");
       return;
     }
-
     try {
-      console.log("Saving tripDetails:", tripDetails);
-      const tripId = await addBusinessTrip(userId, tripDetails);
-      console.log("Trip saved successfully! Trip ID:", tripId);
+      await saveTempBusinessTrip(userId, tripDetails);
+      alert("📌 임시 저장 완료!");
     } catch (error) {
-      console.error("Error saving trip:", error);
+      console.error("❌ 임시 저장 실패:", error);
     }
   };
+
+  /** ✅ 6. 견적 요청 (최종 저장) */
+  const handleRequestQuote = async () => {
+    if (!userId) {
+      console.error("❌ User ID가 없음.");
+      return;
+    }
+    try {
+      const tripId = await addBusinessTrip(userId, tripDetails);
+      alert(`🚀 견적 요청 완료! Trip ID: ${tripId}`);
+    } catch (error) {
+      console.error("❌ 견적 요청 실패:", error);
+    }
+  };
+
+  if (!userId) {
+    return <p className="text-red-500">❌ 로그인 후 이용해 주세요.</p>;
+  }
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-lg max-w-2xl">
       <h2 className="text-3xl font-bold mb-6">👔 비즈니스 트립</h2>
 
-      {/* 일정 입력 필드 */}
       {tripDetails.schedules.map((schedule, index) => (
         <div key={index} className="p-4 border rounded-lg bg-gray-100 mb-4">
           <input
@@ -105,8 +152,12 @@ export default function BusinessTripForm({ userId }) {
         </div>
       ))}
 
-      <button onClick={handleSave} className="mt-4 p-3 text-lg w-full rounded-lg bg-green-500 text-white">
-        📩 예약 저장
+      <button onClick={handleSaveTemp} className="mt-4 p-3 text-lg w-full rounded-lg bg-yellow-500 text-white">
+        💾 임시 저장
+      </button>
+
+      <button onClick={handleRequestQuote} className="mt-4 p-3 text-lg w-full rounded-lg bg-green-500 text-white">
+        📩 견적 요청
       </button>
     </div>
   );
